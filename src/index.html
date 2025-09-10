@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LawGorithm - Elite Legal Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body class="bg-black overflow-hidden" data-theme="dark">
+<div class="main-container app-container">
+<aside class="left-panel animate-slide-in-left sidebar">
+<!-- Brand Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center">
+            <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-balance-scale text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold title-gradient">LawGorithm</h1>
+                <p class="text-xs text-gray-400">Elite Legal Intelligence</p>
+            </div>
+        </div>
+        <button id="theme-toggle" class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none" title="Toggle theme">
+            <i class="fas fa-sun text-yellow-400 text-lg hidden light-icon"></i>
+            <i class="fas fa-moon text-blue-400 text-lg dark-icon"></i>
+        </button>
+    </div>
+    <!-- Documents Section -->
+<div class="flex flex-col flex-grow min-h-0">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center">
+            <i class="fas fa-folder-open text-blue-400 mr-3"></i>
+            <h2 class="text-lg font-semibold text-white">Case Files</h2>
+        </div>
+        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">6 docs</span>
+    </div>
+    
+    <button id="upload-btn" class="btn-primary text-white px-6 py-3 rounded-xl mb-6 flex items-center justify-center font-semibold hover-lift">
+        <i class="fas fa-cloud-upload-alt mr-2"></i>
+        Upload Documents
+    </button>
+    
+    <div class="flex-grow overflow-y-auto document-list space-y-2">
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-pdf text-red-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Contract Agreement v3.pdf</p>
+                <p class="text-xs text-gray-500">2.4 MB • Modified today</p>
+            </div>
+        </div>
+        
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-word text-blue-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Deposition Jane Doe.docx</p>
+                <p class="text-xs text-gray-500">1.8 MB • 2 days ago</p>
+            </div>
+        </div>
+        
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-archive text-purple-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Evidence Photos.zip</p>
+                <p class="text-xs text-gray-500">15.2 MB • 1 week ago</p>
+            </div>
+        </div>
+        
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-pdf text-green-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Motion to Dismiss.pdf</p>
+                <p class="text-xs text-gray-500">891 KB • 3 days ago</p>
+            </div>
+        </div>
+        
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-pdf text-yellow-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Client Intake Form.pdf</p>
+                <p class="text-xs text-gray-500">456 KB • 1 month ago</p>
+            </div>
+        </div>
+        
+        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
+            <div class="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center mr-3">
+                <i class="fas fa-file-word text-indigo-400 text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">Case Brief Alpha.docx</p>
+                <p class="text-xs text-gray-500">1.2 MB • 2 weeks ago</p>
+            </div>
+        </div>
+    </div>
+</div>
+</aside>
+<div class="main-content-wrapper">
+<main class="main-content chat-container">
+<header class="header chat-header">
+    <div class="flex items-center">
+        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4">
+            <i class="fas fa-gavel text-white text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold title-gradient">Legal Intelligence Hub</h1>
+            <p class="text-sm subtitle-gradient font-medium">AI-Powered Legal Analysis</p>
+        </div>
+    </div>
+    <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 text-sm text-gray-400">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>AI Assistant Active</span>
+        </div>
+        <div class="flex items-center space-x-2 text-gray-400">
+            <button class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none">
+                <i class="fas fa-minus text-sm"></i>
+            </button>
+            <button class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none">
+                <i class="far fa-square text-sm"></i>
+            </button>
+            <button class="p-2 hover:bg-red-600 rounded-lg transition-colors focus:outline-none">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="chat-area chat-interface" id="chat-area">
+    <!-- Welcome Message -->
+    <div class="message message-bot animate-fade-in-up">
+        <div class="message-content bot">
+            <div class="flex items-start">
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 mt-1">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-blue-400 mb-1">LawGorithm AI Assistant</p>
+                    <p>Welcome to your elite legal intelligence platform. I'm here to assist with case analysis, document review, legal research, and strategic insights. Upload your documents and ask me anything about your legal matters.</p>
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">Document Analysis</span>
+                        <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs">Legal Research</span>
+                        <span class="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs">Case Strategy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="input-area chat-input">
+    <form class="space-y-4" id="message-form">
+        <div class="flex items-center bg-gray-900/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 focus-within:border-blue-500/50 transition-colors">
+            <div class="flex items-center space-x-3 mr-4">
+                <button type="button" class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none" title="Attach file">
+                    <i class="fas fa-paperclip text-gray-400"></i>
+                </button>
+                <button type="button" class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none" title="Voice input">
+                    <i class="fas fa-microphone text-gray-400"></i>
+                </button>
+            </div>
+            <input 
+                class="flex-grow bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg" 
+                id="message-input" 
+                placeholder="Ask me anything about your legal case..." 
+                type="text"
+            />
+            <button 
+                class="btn-primary px-6 py-3 rounded-xl ml-4 hover-lift flex items-center font-semibold" 
+                type="submit"
+            >
+                <i class="fas fa-paper-plane mr-2"></i>
+                Send
+            </button>
+        </div>
+        <div class="flex items-center justify-between text-sm text-gray-400">
+            <div class="flex items-center space-x-4">
+                <span>Quick actions:</span>
+                <button type="button" class="text-blue-400 hover:text-blue-300 transition-colors">Summarize documents</button>
+                <button type="button" class="text-blue-400 hover:text-blue-300 transition-colors">Find precedents</button>
+                <button type="button" class="text-blue-400 hover:text-blue-300 transition-colors">Draft memo</button>
+            </div>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-shield-alt text-green-400"></i>
+                <span>Attorney-client privilege protected</span>
+            </div>
+        </div>
+    </form>
+</div>
+</main>
+<aside class="right-panel animate-slide-in-right summary-panel">
+<!-- Document Summary -->
+<div class="glass-dark rounded-xl p-6 mb-6">
+    <div class="flex items-center mb-4">
+        <i class="fas fa-file-alt text-blue-400 mr-3"></i>
+        <h2 class="text-lg font-semibold text-white">Document Summary</h2>
+    </div>
+    
+    <div class="space-y-4">
+        <div class="p-4 bg-gray-800/30 rounded-lg">
+            <h3 class="font-semibold text-white text-sm mb-2">Key Findings</h3>
+            <p class="text-gray-300 text-sm leading-relaxed">
+                The uploaded contract contains standard liability clauses with indemnification provisions requiring review. 
+                Motion to dismiss follows procedural requirements but needs stronger jurisdictional arguments.
+            </p>
+        </div>
+        
+        <div class="p-4 bg-gray-800/30 rounded-lg">
+            <h3 class="font-semibold text-white text-sm mb-2">Action Items</h3>
+            <ul class="space-y-1 text-sm text-gray-300">
+                <li class="flex items-start">
+                    <i class="fas fa-circle text-blue-400 text-xs mt-1.5 mr-2"></i>
+                    Review Section 12 of Contract Agreement
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-circle text-blue-400 text-xs mt-1.5 mr-2"></i>
+                    Strengthen jurisdictional arguments in motion
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-circle text-blue-400 text-xs mt-1.5 mr-2"></i>
+                    Analyze deposition inconsistencies
+                </li>
+            </ul>
+        </div>
+        
+        <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>Last updated: Just now</span>
+            <button class="text-blue-400 hover:text-blue-300 transition-colors">
+                <i class="fas fa-refresh mr-1"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Legal Glossary -->
+<div class="glass-dark rounded-xl p-6">
+    <div class="flex items-center mb-4">
+        <i class="fas fa-book text-purple-400 mr-3"></i>
+        <h3 class="text-lg font-semibold text-white">Legal Glossary</h3>
+    </div>
+    
+    <div class="space-y-2">
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Tort">
+            <span class="text-sm text-gray-300">Tort</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Precedent">
+            <span class="text-sm text-gray-300">Precedent</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Liability">
+            <span class="text-sm text-gray-300">Liability</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Jurisdiction">
+            <span class="text-sm text-gray-300">Jurisdiction</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Indemnification">
+            <span class="text-sm text-gray-300">Indemnification</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Discovery">
+            <span class="text-sm text-gray-300">Discovery</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+        <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer" data-term="Depositions">
+            <span class="text-sm text-gray-300">Depositions</span>
+            <i class="fas fa-info-circle text-purple-400 text-xs"></i>
+        </div>
+    </div>
+    
+    <div class="mt-4 pt-4 border-t border-gray-700/30">
+        <p class="text-xs text-gray-400 text-center">
+            <i class="fas fa-lightbulb mr-1"></i>
+            Click any term for detailed definition
+        </p>
+    </div>
+</div>
+</aside>
+</div>
+</div>
+<script src="app.js"></script>
+
+</body></html>

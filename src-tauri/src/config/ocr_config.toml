@@ -1,0 +1,8 @@
+# src-tauri/src/config/ocr_config.toml
+
+# Note: tesseract_cmd is automatically set to the bundled binary path
+# Language data is located in vendor/tesseract-*/tessdata/
+language = "eng"
+psm = 6
+oem = 1
+preserve_interword_spaces = true

@@ -1,0 +1,13 @@
+[database]
+provider = "sqlite-vss"
+path = "storage/legal_docs.db"
+use_ann = true
+
+journal_mode = "WAL"
+synchronous = "NORMAL"
+cache_size = -64000
+temp_store = "MEMORY"
+
+foreign_keys = true
+embedding_dimension = 768
+metric = "cosine"

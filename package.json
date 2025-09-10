@@ -1,0 +1,16 @@
+{
+  "name": "law-gorithm-tauri",
+  "version": "0.1.0",
+  "description": "Privacy-First Legal AI with Tauri",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "tauri dev",
+    "serve": "python3 -m http.server 8080",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

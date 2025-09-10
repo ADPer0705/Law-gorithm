@@ -1,0 +1,6 @@
+python_path = "/usr/bin/python3"
+module_path = "./python_modules"
+entry_script = "rag_processor.py"
+enabled = true
+max_memory_mb = 512
+timeout_secs = 60
