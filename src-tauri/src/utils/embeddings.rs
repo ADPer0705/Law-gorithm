@@ -95,8 +95,18 @@ pub fn embed_batch(texts: &[String]) -> Result<Vec<Vec<f32>>> {
 }
 
 /// Helper: embed a list of Chunks
-pub fn embed_chunks(chunks: &[Chunk]) -> Result<Vec<(Chunk, Vec<f32>)>> {
+pub fn embed_chunks(chunks: Vec<Chunk>) -> Result<Vec<ChunkWithEmbedding>> {
+    if chunks.is_empty() {
+        return Err(EmbeddingError::InvalidInput("Empty chunks".into()));
+    }
+    
     let texts: Vec<String> = chunks.iter().map(|c| c.text.clone()).collect();
     let embeddings = embed_batch(&texts)?;
-    Ok(chunks.to_vec().into_iter().zip(embeddings).collect())
+    
+    Ok(chunks.into_iter().zip(embeddings).map(|(chunk, embedding)| {
+        ChunkWithEmbedding {
+            chunk,
+            embedding,
+        }
+    }).collect())
 }

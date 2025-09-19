@@ -231,5 +231,34 @@ pub fn wipe_user_data(db_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>
 
 // ---------- DATABASE WORKFLOWS ---------- //
 // Populating the Database with the markdown embeddings
+pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error>> {
+    // Get the markdown directory
+    let markdown_dir = crate::utils::dirs::get_markdowns_dir()?;
+    println!("Starting to process markdown files from: {:?}", markdown_dir);
+    
+    // Create or get the database (create_embeddings_db handles checking if it exists)
+    let db_dir = crate::utils::dirs::get_database_dir()?;
+    std::fs::create_dir_all(&db_dir)?; // Ensure directory exists
+    let db = create_embeddings_db(&db_dir)?;
+    
+    // Step 1: Chunk markdown files
+    let chunks = crate::services::chunking::chunk_markdown_dir(&markdown_dir)?;
+    println!("Created {} chunks from markdown files", chunks.len());
+    
+    // Step 2: Anonymize the chunks
+    let anonymized_chunks = crate::services::anonymization::anonymize_chunks(chunks)?;
+    println!("Anonymized {} chunks", anonymized_chunks.len());
+    
+    // Step 3: Embed the chunks
+    let chunks_with_embeddings = crate::services::embeddings::embed_chunks(anonymized_chunks)?;
+    println!("Embedded {} chunks", chunks_with_embeddings.len());
+    
+    // Step 4: Update the database
+    db.insert_chunks(chunks_with_embeddings)?;
+    println!("Successfully inserted chunks into the database");
+    
+    Ok(())
+}
+
 
 // Retrieval of relevant chunks based on user query
