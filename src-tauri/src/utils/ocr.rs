@@ -1,29 +1,21 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::error::Error;
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
+use tesseract::Tesseract;
 
 /// OCR processor for converting a PDF to markdown
 pub struct PdfOcrProcessor {
-    tesseract_path: PathBuf,
     ocr_markdowns_dir: PathBuf,
 }
 
 impl PdfOcrProcessor {
     /// Create a new OCR processor
     pub fn new(ocr_markdowns_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let tesseract_path = std::env::current_exe()?
-            .parent()
-            .ok_or("Cannot find executable directory")?
-            .join("vendor")
-            .join("tesseract");
-
         fs::create_dir_all(&ocr_markdowns_dir)?;
 
         Ok(Self {
-            tesseract_path,
             ocr_markdowns_dir,
         })
     }
@@ -81,19 +73,16 @@ impl PdfOcrProcessor {
     }
 
     fn ocr_image(&self, image_path: &Path) -> Result<String, Box<dyn std::error::Error>> {
-        let output = Command::new(&self.tesseract_path)
-            .args(&[image_path.to_string_lossy().as_ref(), "stdout", "-l", "eng", "--psm", "6"])
-            .output()?;
-
-        if !output.status.success() {
-            return Err(format!(
-                "Tesseract failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            )
-            .into());
-        }
-
-        Ok(Self::clean_text(String::from_utf8(output.stdout)?))
+        // Read image file as bytes
+        let image_data = std::fs::read(image_path)?;
+        
+        // Initialize Tesseract with English language (uses system tessdata)
+        let mut tesseract = Tesseract::new(None, Some("eng"))?
+            .set_image_from_mem(&image_data)?;
+        
+        let text = tesseract.get_text()?;
+        
+        Ok(Self::clean_text(text))
     }
 
     fn clean_text(text: String) -> String {

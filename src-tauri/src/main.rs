@@ -89,7 +89,7 @@ async fn update_files(files: Vec<serde_json::Value>) -> Result<serde_json::Value
     }
 
     // --- Update embeddings after sync ---
-    crate::services::embeddings_db::populate_database_from_markdown()
+    crate::services::embeddings_db::populate_database_from_markdown().await
         .map_err(|e| e.to_string())?;
 
     Ok(serde_json::json!({ "success": true }))

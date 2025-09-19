@@ -233,7 +233,7 @@ pub fn wipe_user_data(db_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>
 
 // ---------- DATABASE WORKFLOWS ---------- //
 // Populating the Database with the markdown embeddings
-pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error>> {
     // Get the markdown directory
     let markdown_dir = crate::utils::dirs::get_markdowns_dir()?;
     println!("Starting to process markdown files from: {:?}", markdown_dir);
@@ -248,8 +248,8 @@ pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error
     let chunks = crate::services::chunking::chunk_markdown_dir(markdown_dir_str)?;
     println!("Created {} chunks from markdown files", chunks.len());
     
-    // Step 2: Anonymize the chunks
-    let anonymized_chunks = crate::services::anonymization::anonymize_chunks(chunks)?;
+    // Step 2: Anonymize the chunks (now async)
+    let anonymized_chunks = crate::services::anonymization::anonymize_chunks(chunks).await?;
     println!("Anonymized {} chunks", anonymized_chunks.len());
     
     // Step 3: Embed the chunks

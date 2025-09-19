@@ -30,6 +30,32 @@
       "icons/128x128.png",
       "icons/icon.icns"
     ],
-    "category": "Productivity"
+    "category": "Productivity",
+    "shortDescription": "Privacy-First Legal AI Assistant",
+    "longDescription": "A desktop application for legal document analysis with privacy-first approach",
+    "resources": [],
+    "externalBin": [],
+    "copyright": "Copyright (c) 2025 Law-gorithm",
+    "licenseFile": "",
+    "windows": {
+      "certificateThumbprint": "",
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libtesseract4", "libleptonica-dev", "python3"]
+      },
+      "appimage": {
+        "bundleMediaFramework": true,
+        "files": {}
+      }
+    }
   }
 }
