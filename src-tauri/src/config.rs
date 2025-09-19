@@ -1,13 +1,12 @@
 // Simple application configuration
 use std::fs;
 use std::io::{self, ErrorKind};
-use std::path::PathBuf;
 use dirs;
 
 #[derive(Debug, Clone)]
 /// Holds the main directories for the application
 pub struct AppDirectories {
-    pub base: std::path::PathBuf,
+    pub base_dir: std::path::PathBuf,
     pub file_links: std::path::PathBuf,
     pub markdowns: std::path::PathBuf,
     pub database: std::path::PathBuf,

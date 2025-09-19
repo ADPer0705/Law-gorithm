@@ -89,7 +89,7 @@ async fn update_files(files: Vec<serde_json::Value>) -> Result<serde_json::Value
     }
 
     // --- Update embeddings after sync ---
-    crate::services::embeddings_db::generate_embeddings(&file_ids)
+    crate::services::embeddings_db::populate_database_from_markdown()
         .map_err(|e| e.to_string())?;
 
     Ok(serde_json::json!({ "success": true }))
@@ -101,14 +101,17 @@ async fn update_files(files: Vec<serde_json::Value>) -> Result<serde_json::Value
 // Query: user query through chat interface
 #[tauri::command]
 async fn query(query: String) -> Result<serde_json::Value, String> {
-    let query_embedding = crate::services::retrieval::embed_query(&query).map_err(|e| e.to_string())?;
-    let chunks = crate::services::retrieval::retrieve_chunks_with_embedding(&query_embedding, None).map_err(|e| e.to_string())?;
-    let llm_response = crate::services::llm::call_llm_api(&query, &chunks).map_err(|e| e.to_string())?;
-    Ok(serde_json::json!({
-        "success": true,
-        "response": llm_response,
-        "relevant_sources": chunks.iter().filter_map(|c| c.source.clone()).collect::<Vec<_>>(),
-    }))
+    match crate::services::query::query(query).await {
+        Ok(result) => Ok(serde_json::json!({
+            "success": true,
+            "response": result.get("response").unwrap_or(&serde_json::Value::String("No response".to_string())),
+            "relevant_sources": result.get("sources").unwrap_or(&serde_json::Value::Array(vec![]))
+        })),
+        Err(e) => {
+            eprintln!("Query error: {}", e);
+            Err(format!("Failed to process query: {}", e))
+        }
+    }
 }
 
 // ---------- USER DATA SANITATION ----------//

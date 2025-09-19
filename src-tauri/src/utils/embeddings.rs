@@ -3,7 +3,8 @@ use pyo3::prelude::*;
 use std::sync::Mutex;
 use thiserror::Error;
 
-use crate::chunking::Chunk;
+use crate::services::chunking::Chunk as InputChunk;
+use crate::services::embeddings_db::{Chunk as DbChunk, Source as DbSource, ChunkWithEmbedding};
 
 #[derive(Error, Debug)]
 pub enum EmbeddingError {
@@ -46,11 +47,13 @@ def embed_batch(texts):
 
             let module = PyModule::from_code_bound(py, code, "st_embed.py", "st_embed")?;
             // Store the module itself
-            Ok(Mutex::new(module.into()))
+            Ok::<Mutex<Py<PyAny>>, EmbeddingError>(Mutex::new(module.into()))
         })?;
         Ok(())
     })
 }
+
+// Use ChunkWithEmbedding from embeddings_db to keep a single source of truth
 
 /// Embed a single string into a vector
 pub fn embed_text(text: &str) -> Result<Vec<f32>> {
@@ -65,7 +68,7 @@ pub fn embed_text(text: &str) -> Result<Vec<f32>> {
             .lock()
             .unwrap();
 
-        let module = model.as_ref(py);
+        let module = model.bind(py);
         let func = module.getattr("embed")?;
         let result = func.call1((text,))?;
         let v: Vec<f32> = result.extract()?;
@@ -86,7 +89,7 @@ pub fn embed_batch(texts: &[String]) -> Result<Vec<Vec<f32>>> {
             .lock()
             .unwrap();
 
-        let module = model.as_ref(py);
+        let module = model.bind(py);
         let func = module.getattr("embed_batch")?;
         let result = func.call1((texts.to_vec(),))?;
         let v: Vec<Vec<f32>> = result.extract()?;
@@ -94,19 +97,31 @@ pub fn embed_batch(texts: &[String]) -> Result<Vec<Vec<f32>>> {
     })
 }
 
-/// Helper: embed a list of Chunks
-pub fn embed_chunks(chunks: Vec<Chunk>) -> Result<Vec<ChunkWithEmbedding>> {
+/// Helper: embed a list of Chunks from the chunking service and return DB-ready structures
+pub fn embed_chunks(chunks: Vec<InputChunk>) -> Result<Vec<ChunkWithEmbedding>> {
     if chunks.is_empty() {
         return Err(EmbeddingError::InvalidInput("Empty chunks".into()));
     }
-    
-    let texts: Vec<String> = chunks.iter().map(|c| c.text.clone()).collect();
+    // Convert chunking::Chunk -> embeddings_db::Chunk to align with DB schema
+    let db_chunks: Vec<DbChunk> = chunks
+        .into_iter()
+        .map(|c| DbChunk {
+            text: c.text,
+            source: DbSource {
+                filename: c.source.filename,
+                section: if c.source.section.is_empty() { None } else { Some(c.source.section) },
+                sub_section: if c.source.sub_section.is_empty() { None } else { Some(c.source.sub_section) },
+            },
+            metadata: c.metadata,
+        })
+        .collect();
+
+    let texts: Vec<String> = db_chunks.iter().map(|c| c.text.clone()).collect();
     let embeddings = embed_batch(&texts)?;
-    
-    Ok(chunks.into_iter().zip(embeddings).map(|(chunk, embedding)| {
-        ChunkWithEmbedding {
-            chunk,
-            embedding,
-        }
-    }).collect())
+
+    Ok(db_chunks
+        .into_iter()
+        .zip(embeddings)
+        .map(|(chunk, embedding)| ChunkWithEmbedding { chunk, embedding })
+        .collect())
 }

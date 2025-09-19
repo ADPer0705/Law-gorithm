@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::error::Error;
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 
@@ -110,10 +111,8 @@ pub fn process_pdf_to_markdown(
     markdown_path: &Path,
 ) -> Result<PathBuf, Box<dyn Error>> {
     let processor = PdfOcrProcessor::new(
-        pdf_path.parent().unwrap_or_else(|| Path::new(".")),
-        markdown_path.parent().unwrap_or_else(|| Path::new(".")),
+        markdown_path.parent().unwrap_or_else(|| Path::new(".")).to_path_buf(),
     )?;
-
-    processor.process_single_pdf(pdf_path, markdown_path)?;
+    processor.process_pdf(pdf_path, markdown_path)?;
     Ok(markdown_path.to_path_buf())
 }

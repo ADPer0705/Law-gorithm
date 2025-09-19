@@ -36,74 +36,26 @@
             <i class="fas fa-folder-open text-blue-400 mr-3"></i>
             <h2 class="text-lg font-semibold text-white">Case Files</h2>
         </div>
-        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">6 docs</span>
+        <div class="flex items-center space-x-2">
+            <button id="refresh-files-btn" class="p-2 hover:bg-gray-800 rounded-lg transition-colors focus:outline-none" title="Refresh file list">
+                <i class="fas fa-sync-alt text-blue-400 text-sm"></i>
+            </button>
+            <span id="doc-count" class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">0 docs</span>
+        </div>
     </div>
     
-    <button id="upload-btn" class="btn-primary text-white px-6 py-3 rounded-xl mb-6 flex items-center justify-center font-semibold hover-lift">
+    <button id="upload-btn" class="btn-primary text-white px-6 py-3 rounded-xl mb-4 flex items-center justify-center font-semibold hover-lift">
         <i class="fas fa-cloud-upload-alt mr-2"></i>
         Upload Documents
     </button>
     
-    <div class="flex-grow overflow-y-auto document-list space-y-2">
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-pdf text-red-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Contract Agreement v3.pdf</p>
-                <p class="text-xs text-gray-500">2.4 MB • Modified today</p>
-            </div>
-        </div>
-        
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-word text-blue-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Deposition Jane Doe.docx</p>
-                <p class="text-xs text-gray-500">1.8 MB • 2 days ago</p>
-            </div>
-        </div>
-        
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-archive text-purple-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Evidence Photos.zip</p>
-                <p class="text-xs text-gray-500">15.2 MB • 1 week ago</p>
-            </div>
-        </div>
-        
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-pdf text-green-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Motion to Dismiss.pdf</p>
-                <p class="text-xs text-gray-500">891 KB • 3 days ago</p>
-            </div>
-        </div>
-        
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-pdf text-yellow-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Client Intake Form.pdf</p>
-                <p class="text-xs text-gray-500">456 KB • 1 month ago</p>
-            </div>
-        </div>
-        
-        <div class="document-item flex items-center p-3 rounded-lg text-gray-300 hover:text-white cursor-pointer">
-            <div class="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-file-word text-indigo-400 text-sm"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">Case Brief Alpha.docx</p>
-                <p class="text-xs text-gray-500">1.2 MB • 2 weeks ago</p>
-            </div>
-        </div>
+    <button id="clear-data-btn" class="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 px-6 py-3 rounded-xl mb-6 flex items-center justify-center font-semibold transition-all duration-300 hover:transform hover:scale-105">
+        <i class="fas fa-trash-alt mr-2"></i>
+        Clear All Data
+    </button>
+    
+    <div class="flex-grow overflow-y-auto document-list space-y-2" id="document-list">
+        <!-- Documents will be loaded dynamically -->
     </div>
 </div>
 </aside>
@@ -293,6 +245,31 @@
 </aside>
 </div>
 </div>
+
+<!-- Confirmation Modal for Clear All Data -->
+<div id="clear-data-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-dark rounded-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up">
+        <div class="text-center">
+            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-red-400 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Clear All Data?</h3>
+            <p class="text-gray-300 mb-6 leading-relaxed">
+                This action will permanently delete all your uploaded documents, chat history, and case data. This cannot be undone.
+            </p>
+            <div class="flex space-x-3">
+                <button id="cancel-clear-btn" class="flex-1 px-6 py-3 bg-gray-700/50 hover:bg-gray-700/70 text-gray-300 hover:text-white rounded-xl font-semibold transition-all duration-300">
+                    Cancel
+                </button>
+                <button id="confirm-clear-btn" class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all duration-300 hover:transform hover:scale-105">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    Delete All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="app.js"></script>
 
 </body></html>

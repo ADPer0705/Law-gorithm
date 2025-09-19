@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
 
 /// Represents a chunk of text with metadata
 #[derive(Debug, Clone)]
@@ -71,8 +70,10 @@ impl Chunker {
 // ---------- CHUNKING WORKFLOWS ---------- //
 
 /// Walk through the markdown directory and chunk all files
-pub fn chunk_markdown_dir(markdown_dir: &str, chunker: &Chunker) -> std::io::Result<Vec<Chunk>> {
+pub fn chunk_markdown_dir(markdown_dir: &str) -> std::io::Result<Vec<Chunk>> {
     let mut all_chunks = Vec::new();
+    // Create a chunker with sensible defaults
+    let chunker = Chunker::new(512, 50);  // 512 max tokens with 50 token overlap
 
     for entry in fs::read_dir(markdown_dir)? {
         let entry = entry?;

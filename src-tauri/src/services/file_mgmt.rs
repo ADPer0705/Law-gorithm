@@ -1,6 +1,6 @@
 // Simple file storage service for Law-gorithm
-use crate::utils::file_utils::*;
-use std::path::{Path, PathBuf};
+use crate::utils::dirs::{get_file_links_dir, get_markdowns_dir};
+use std::path::PathBuf;
 use std::fs;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -38,7 +38,7 @@ impl FileStorageService {
         let file_link = FileLink {
             id: file_id.to_string(),
             original_name: filename.to_string(),
-            original_path: path,
+            original_path: path.clone(),
         };
 
         // Store the file link as JSON
@@ -81,7 +81,7 @@ impl FileStorageService {
             fs::remove_file(&link_file_path)?;
             
             // Also try to remove associated OCR markdown
-            let ocr_markdowns_dir = get_ocr_markdowns_dir()?;
+            let ocr_markdowns_dir = get_markdowns_dir()?;
             let markdown_path = ocr_markdowns_dir.join(format!("{}.md", file_id));
             if markdown_path.exists() {
                 if let Err(e) = fs::remove_file(&markdown_path) {
@@ -104,7 +104,7 @@ impl MarkdownService {
     /// Generate a markdown for a single PDF and store it in the OCR markdowns directory
     pub fn generate_markdown_for_file(file_id: &str, file_path: &str) -> Result<PathBuf, Box<dyn Error>> {
         let pdf_path = PathBuf::from(file_path);
-        let ocr_markdowns_dir = get_ocr_markdowns_dir()?;
+        let ocr_markdowns_dir = get_markdowns_dir()?;
         let markdown_path = ocr_markdowns_dir.join(format!("{}.md", file_id));
 
         crate::utils::ocr::process_pdf_to_markdown(&pdf_path, &markdown_path)?;
@@ -115,7 +115,7 @@ impl MarkdownService {
 
     /// Remove the corresponding markdown file for a given file_id
     pub fn remove_markdown_for_file(file_id: &str) -> Result<(), Box<dyn Error>> {
-        let ocr_markdowns_dir = get_ocr_markdowns_dir()?;
+        let ocr_markdowns_dir = get_markdowns_dir()?;
         let markdown_path = ocr_markdowns_dir.join(format!("{}.md", file_id));
 
         if markdown_path.exists() {

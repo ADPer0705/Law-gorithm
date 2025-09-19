@@ -1,10 +1,6 @@
-pub mod file_mgmt;
-pub mod ocr;
-pub mod chunking;
 pub mod anonymization;
-pub mod embeddings;
+pub mod chunking;
 pub mod embeddings_db;
-pub mod retrieval;
-pub mod processing;
+pub mod file_mgmt;
 pub mod query;
 pub mod user_data_sanitization;

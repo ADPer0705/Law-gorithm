@@ -1,8 +1,10 @@
 // src/services/anonymization.rs
-use std::collections::HashMap;
-use std::error::Error;
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::{
+    collections::HashMap,
+    error::Error,
+    path::PathBuf,
+    sync::Mutex,
+};
 
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -11,8 +13,9 @@ use serde::{Deserialize, Serialize};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyModule};
+use pyo3::Bound; // <- added
 
-use crate::chunking::Chunk;
+use crate::services::chunking::Chunk;
 
 // ------------------- Entity Definitions -------------------
 
@@ -49,8 +52,7 @@ impl EntityType {
 pub struct DetectedEntity {
     pub text: String,
     pub entity_type: EntityType,
-    /// byte offsets in the original string (safe for Rust slicing)
-    pub start: usize,
+    pub start: usize, // byte offsets (Rust-safe)
     pub end: usize,
 }
 
@@ -62,28 +64,25 @@ pub struct RegexDetector {
 
 impl RegexDetector {
     pub fn new() -> Result<Self, regex::Error> {
+        use EntityType::*;
         let mut patterns = HashMap::new();
 
-        patterns.insert(EntityType::CaseNumber, vec![
+        patterns.insert(CaseNumber, vec![
             Regex::new(r"\b\d{4}-\d{4,6}\b")?,
             Regex::new(r"\bCase No\.?\s*\d+")?,
         ]);
-
-        patterns.insert(EntityType::Money, vec![
+        patterns.insert(Money, vec![
             Regex::new(r"\$[\d,]+(?:\.\d{2})?")?,
             Regex::new(r"\b\d+(?:,\d{3})*(?:\.\d{2})?\s*dollars?\b")?,
         ]);
-
-        patterns.insert(EntityType::Phone, vec![
+        patterns.insert(Phone, vec![
             Regex::new(r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b")?,
             Regex::new(r"\(\d{3}\)\s*\d{3}[-.]?\d{4}")?,
         ]);
-
-        patterns.insert(EntityType::Email, vec![
+        patterns.insert(Email, vec![
             Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")?,
         ]);
-
-        patterns.insert(EntityType::Date, vec![
+        patterns.insert(Date, vec![
             Regex::new(r"\b\d{1,2}/\d{1,2}/\d{4}\b")?,
             Regex::new(r"\b\d{4}-\d{2}-\d{2}\b")?,
             Regex::new(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b")?,
@@ -107,18 +106,11 @@ impl RegexDetector {
                 }
             }
         }
-
         entities
     }
 }
 
 // ------------------- HuggingFace NER (via PyO3) -------------------
-//
-// This initializes a small Python module (pipeline) and keeps the Python detector as a Py<PyAny>
-// so subsequent calls reuse the loaded model (avoid reloading every call).
-//
-// NOTE: Python environment must have `transformers` and `torch` installed and internet access
-// (or a local cache of the model). First initialization will download the model and can take time.
 
 const HF_NER_PY: &str = r#"
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
@@ -126,13 +118,11 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification, pipelin
 class NERDetector:
     def __init__(self):
         model_name = "dbmdz/bert-large-cased-finetuned-conll03-english"
-        # these will download model/tokenizer on first run if not cached
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForTokenClassification.from_pretrained(model_name)
         self.ner_pipeline = pipeline("ner", model=self.model, tokenizer=self.tokenizer, aggregation_strategy="simple")
 
     def detect_entities(self, text):
-        # Returns list of dicts with keys like: word, entity_group, score, start, end
         return self.ner_pipeline(text)
 
 detector = NERDetector()
@@ -145,97 +135,101 @@ pub struct HuggingFaceNER {
 impl HuggingFaceNER {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         Python::with_gil(|py| {
-            // create a module from the Python code and take the `detector` object
-            let module = PyModule::from_code(py, HF_NER_PY, "hf_ner.py")?;
-            let detector = module.getattr("detector")?.into_py(py);
-            Ok(HuggingFaceNER { detector })
-        }).map_err(|e| Box::new(e) as Box<dyn Error>)
+            // Use the stable API (Bound)
+            let module = PyModule::from_code_bound(py, HF_NER_PY, "hf_ner.py", "hf_ner")?;
+            let detector = module.getattr("detector")?.unbind(); // Bound<'py, PyAny> -> Py<PyAny>
+            Ok(Self { detector })
+        })
+        .map_err(|e: pyo3::PyErr| Box::new(e) as Box<dyn Error>)
     }
 
-    /// Detect entities using the HF pipeline and convert start/end (character indices)
-    /// to byte offsets for Rust strings.
     pub fn detect(&self, text: &str) -> Result<Vec<DetectedEntity>, Box<dyn Error>> {
         Python::with_gil(|py| {
-            let detector_obj = self.detector.as_ref(py);
+            let detector_obj = self.detector.bind(py); // Py<PyAny> -> Bound<'py, PyAny>
             let res = detector_obj.call_method1("detect_entities", (text,))?;
-            let py_list = res.downcast::<PyList>()?;
+            let py_list = res.downcast::<PyList>()?; // Bound<'py, PyAny> -> Bound<'py, PyList>
 
             let mut entities = Vec::new();
+
+            // helper to extract string from dict for multiple possible keys
+            fn get_string_from_dict(dict: &Bound<'_, PyDict>, keys: &[&str]) -> Option<String> {
+                for &k in keys {
+                    if let Ok(Some(v)) = dict.get_item(k) {
+                        if let Ok(s) = v.extract::<String>() {
+                            return Some(s);
+                        }
+                    }
+                }
+                None
+            }
+
+            // helper to extract usize from dict for a key
+            fn get_usize_from_dict(dict: &Bound<'_, PyDict>, key: &str) -> Option<usize> {
+                if let Ok(Some(v)) = dict.get_item(key) {
+                    if let Ok(n) = v.extract::<usize>() {
+                        return Some(n);
+                    }
+                }
+                None
+            }
+
             for item in py_list.iter() {
-                let dict = item.downcast::<PyDict>()?;
+                let dict = match item.downcast::<PyDict>() {
+                    Ok(d) => d,
+                    Err(_) => continue, // skip unexpected items
+                };
 
-                // try a few keys providers may use
-                let word: String = dict.get_item("word")
-                    .or_else(|| dict.get_item("word").or_else(|| dict.get_item("entity")))
-                    .or_else(|| dict.get_item("text"))
-                    .and_then(|v| v.extract().ok())
-                    .unwrap_or_else(|| "".to_string());
+                let word = get_string_from_dict(&dict, &["word", "entity", "text"]).unwrap_or_default();
+                let label = get_string_from_dict(&dict, &["entity_group", "label"]).unwrap_or_default();
 
-                let label: String = dict.get_item("entity_group")
-                    .or_else(|| dict.get_item("label"))
-                    .and_then(|v| v.extract().ok())
-                    .unwrap_or_else(|| "".to_string());
+                let start_char = get_usize_from_dict(&dict, "start").unwrap_or(0);
+                let end_char = get_usize_from_dict(&dict, "end")
+                    .unwrap_or_else(|| start_char + word.chars().count());
 
-                // start/end are usually character offsets from the HF pipeline
-                let start_char: usize = dict.get_item("start")
-                    .and_then(|v| v.extract().ok())
-                    .unwrap_or(0usize);
-                let end_char: usize = dict.get_item("end")
-                    .and_then(|v| v.extract().ok())
-                    .unwrap_or(start_char + word.chars().count());
-
-                // convert char-based indices to byte-based indices for Rust slicing
                 let start_byte = char_idx_to_byte_idx(text, start_char).unwrap_or(0);
                 let end_byte = char_idx_to_byte_idx(text, end_char).unwrap_or(start_byte + word.len());
 
-                // map label -> EntityType (extend as needed)
                 let entity_type = match label.as_str() {
                     "PER" | "PERSON" => EntityType::Person,
                     "ORG" | "ORGANIZATION" => EntityType::Organization,
                     "LOC" | "LOCATION" => EntityType::Location,
                     "MISC" => EntityType::LegalReference,
-                    _ => {
-                        // If HF returns unknown label, skip — regex detector may catch other types
-                        continue;
-                    }
+                    _ => continue,
                 };
 
-                // Skip empty matches
-                if start_byte >= end_byte || end_byte > text.len() {
-                    continue;
+                if start_byte < end_byte && end_byte <= text.len() {
+                    let final_text = if word.is_empty() {
+                        text[start_byte..end_byte].to_string()
+                    } else {
+                        word
+                    };
+
+                    entities.push(DetectedEntity {
+                        text: final_text,
+                        entity_type,
+                        start: start_byte,
+                        end: end_byte,
+                    });
                 }
-
-                let text_span = text.get(start_byte..end_byte).unwrap_or("").to_string();
-
-                entities.push(DetectedEntity {
-                    text: if word.is_empty() { text_span.clone() } else { word },
-                    entity_type,
-                    start: start_byte,
-                    end: end_byte,
-                });
             }
 
             Ok(entities)
-        }).map_err(|e| Box::new(e) as Box<dyn Error>)
+        })
+        .map_err(|e: pyo3::PyErr| Box::new(e) as Box<dyn Error>)
     }
 }
 
-/// Helper: convert a character index (0..n chars) into a byte index in Rust UTF-8 string.
 fn char_idx_to_byte_idx(s: &str, char_idx: usize) -> Option<usize> {
-    if char_idx == 0 { return Some(0); }
-    let mut chars = s.char_indices();
-    let mut i = 0usize;
-    while let Some((byte_pos, _ch)) = chars.next() {
-        i += 1;
-        if i == char_idx {
-            return Some(byte_pos + s[byte_pos..].chars().next().unwrap().len_utf8());
-        }
+    // char_idx is an index in terms of chars (0-based). We return the byte index of that char.
+    // If char_idx == number of chars, return len() (end of string).
+    if char_idx == 0 {
+        return Some(0);
     }
-    // If char_idx is past last char, return len()
-    if char_idx >= s.chars().count() {
+    let total_chars = s.chars().count();
+    if char_idx >= total_chars {
         return Some(s.len());
     }
-    None
+    s.char_indices().nth(char_idx).map(|(byte_idx, _)| byte_idx)
 }
 
 // ------------------- Pseudonym Database -------------------
@@ -276,7 +270,8 @@ impl PseudonymDatabase {
     pub fn get_pseudonym(&self, original: &str) -> SqliteResult<Option<String>> {
         let conn = Connection::open(&self.db_path)?;
         let mut stmt = conn.prepare("SELECT pseudonym FROM pseudonyms WHERE original = ?1")?;
-        stmt.query_row([original], |row| row.get::<_, String>(0)).optional()
+        stmt.query_row([original], |row| row.get::<_, String>(0))
+            .optional()
     }
 
     pub fn store_pseudonym(&self, mapping: &PseudonymMapping) -> SqliteResult<()> {
@@ -284,7 +279,7 @@ impl PseudonymDatabase {
         conn.execute(
             "INSERT OR REPLACE INTO pseudonyms (original, pseudonym, entity_type)
              VALUES (?1, ?2, ?3)",
-            [&mapping.original, &mapping.pseudonym, &mapping.entity_type.to_prefix()],
+            [&mapping.original, &mapping.pseudonym, mapping.entity_type.to_prefix()],
         )?;
         Ok(())
     }
@@ -318,7 +313,6 @@ impl PseudonymGenerator {
         if let Some(existing) = self.database.get_pseudonym(original)? {
             return Ok(existing);
         }
-
         let counter = self.database.get_next_counter(&entity_type)?;
         let pseudonym = format!("{}_{}", entity_type.to_prefix(), counter);
 
@@ -327,7 +321,6 @@ impl PseudonymGenerator {
             pseudonym: pseudonym.clone(),
             entity_type,
         };
-
         self.database.store_pseudonym(&mapping)?;
         Ok(pseudonym)
     }
@@ -342,123 +335,88 @@ pub struct AnonymizationWorkflow {
 }
 
 impl AnonymizationWorkflow {
-    /// data_dir is where pseudonyms.sqlite will be created / stored
-    pub fn new(data_dir: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        // Initialize NER (this will load model — can be slow first time)
-        let ner = HuggingFaceNER::new()?;
-        let regex = RegexDetector::new()?;
-        let pg = PseudonymGenerator::new(data_dir)?;
-
+    pub fn new(data_dir: &PathBuf) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            regex_detector: regex,
-            ner_detector: ner,
-            pseudonym_generator: pg,
+            regex_detector: RegexDetector::new()?,
+            ner_detector: HuggingFaceNER::new()?,
+            pseudonym_generator: PseudonymGenerator::new(data_dir)?,
         })
     }
 
-    /// Anonymize a single text: run regex detector and HF NER (both),
-    /// merge detections, dedupe, then replace in reverse order so indices stay valid.
-    pub fn anonymize_text(&self, text: &str) -> Result<String, Box<dyn std::error::Error>> {
-        // Collect regex entities (byte indices)
+    pub fn anonymize_text(&self, text: &str) -> Result<String, Box<dyn Error>> {
         let mut entities = self.regex_detector.detect(text);
+        entities.append(&mut self.ner_detector.detect(text)?);
 
-        // Collect NER entities (converted to byte indices inside detect)
-        let mut ner_entities = self.ner_detector.detect(text)?;
-        entities.append(&mut ner_entities);
-
-        // normalize: remove duplicates based on start,end,text
-        entities.sort_by(|a, b| {
-            a.start.cmp(&b.start).then(a.end.cmp(&b.end)).then(a.text.cmp(&b.text))
-        });
+        entities.sort_by(|a, b| a.start.cmp(&b.start).then(a.end.cmp(&b.end)).then(a.text.cmp(&b.text)));
         entities.dedup_by(|a, b| a.start == b.start && a.end == b.end && a.text == b.text);
 
-        // Replace in reverse order of start so earlier replacements don't shift later indices
         entities.sort_by(|a, b| b.start.cmp(&a.start));
 
         let mut anonymized = text.to_string();
-
         for ent in entities {
-            // guard indices
             if ent.start >= ent.end || ent.end > anonymized.len() {
-                // If original indices are out-of-bounds (unlikely), skip
                 continue;
             }
-
-            // Retrieve/create pseudonym
-            let pseudonym = self.pseudonym_generator.get_or_create_pseudonym(&ent.text, ent.entity_type.clone())?;
-            // Replace range in anonymized string (we're processing from end -> start)
+            let pseudonym = self.pseudonym_generator.get_or_create_pseudonym(&ent.text, ent.entity_type)?;
             anonymized.replace_range(ent.start..ent.end, &pseudonym);
         }
-
         Ok(anonymized)
     }
 
-    /// De-anonymize a single text: replace pseudonyms back with original values from the DB
-    pub fn deanonymize_text(&self, text: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let conn = rusqlite::Connection::open(&self.pseudonym_generator.database.db_path)?;
-
-        // Fetch all pseudonyms and their originals
+    pub fn deanonymize_text(&self, text: &str) -> Result<String, Box<dyn Error>> {
+        let conn = Connection::open(&self.pseudonym_generator.database.db_path)?;
         let mut stmt = conn.prepare("SELECT pseudonym, original FROM pseudonyms")?;
-        let mappings_iter = stmt.query_map([], |row| {
-            let pseudonym: String = row.get(0)?;
-            let original: String = row.get(1)?;
-            Ok((pseudonym, original))
-        })?;
+        let mappings: Vec<(String, String)> = stmt.query_map([], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?.collect::<Result<_, _>>()?;
 
         let mut deanonymized = text.to_string();
-
-        // Replace pseudonyms in reverse order of length to avoid substring collisions
-        let mut mappings: Vec<(String, String)> = Vec::new();
-        for mapping in mappings_iter {
-            mappings.push(mapping?);
-        }
-        mappings.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
-
-        for (pseudonym, original) in mappings {
+        for (pseudonym, original) in {
+            let mut sorted = mappings;
+            sorted.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+            sorted
+        } {
             deanonymized = deanonymized.replace(&pseudonym, &original);
         }
-
         Ok(deanonymized)
     }
 
-    /// Public API: pass in chunks, get anonymized chunks back.
-    pub fn anonymize_chunks(&self, chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn std::error::Error>> {
-        let mut out = Vec::with_capacity(chunks.len());
-        for mut chunk in chunks.into_iter() {
-            chunk.text = self.anonymize_text(&chunk.text)?;
-            out.push(chunk);
-        }
-        Ok(out)
+    pub fn anonymize_chunks(&self, chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn Error>> {
+        chunks.into_iter()
+            .map(|mut chunk| {
+                chunk.text = self.anonymize_text(&chunk.text)?;
+                Ok(chunk)
+            })
+            .collect()
     }
 }
 
-
 // ---------- STATIC WORKFLOW STORAGE ---------- //
+
 static WORKFLOW: OnceCell<Mutex<AnonymizationWorkflow>> = OnceCell::new();
 
-/// Initialize the anonymization workflow (only once)
-pub fn init_anonymization(data_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_anonymization(data_dir: &PathBuf) -> Result<(), Box<dyn Error>> {
     WORKFLOW.get_or_try_init(|| {
         let workflow = AnonymizationWorkflow::new(data_dir)?;
-        Ok(Mutex::new(workflow))
+        Ok::<_, Box<dyn Error>>(Mutex::new(workflow))
     })?;
     Ok(())
 }
 
-/// Public function: anonymize chunks using global workflow
-pub fn anonymize_chunks(chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn std::error::Error>> {
-    let workflow_mutex = WORKFLOW
+pub fn anonymize_chunks(chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn Error>> {
+    let workflow = WORKFLOW
         .get()
-        .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.");
-    let workflow = workflow_mutex.lock().unwrap();
+        .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.")
+        .lock()
+        .unwrap();
     workflow.anonymize_chunks(chunks)
 }
 
-/// Public function: de-anonymize a single string response
-pub fn deanonymize_response(text: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let workflow_mutex = WORKFLOW
+pub fn deanonymize_response(text: &str) -> Result<String, Box<dyn Error>> {
+    let workflow = WORKFLOW
         .get()
-        .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.");
-    let workflow = workflow_mutex.lock().unwrap();
+        .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.")
+        .lock()
+        .unwrap();
     workflow.deanonymize_text(text)
 }

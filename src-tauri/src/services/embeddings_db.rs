@@ -1,10 +1,10 @@
 // src-tauri/src/services/embeddings_db_structs.rs
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
-use uuid::Uuid;
-use rusqlite::Connection;
+use rusqlite::{Connection, params};
 use std::path::PathBuf;
+
+use crate::utils::embeddings::embed_chunks;
 
 
 // ---------- DEFINING CHUNKS ---------- //
@@ -82,7 +82,7 @@ impl EmbeddingsDatabase {
         Ok(EmbeddingsDatabase {
             db_path,
             embedding_dimensions: 384, // default for your embedding model
-            metric: "cosine".to_string(),
+            metric: SimilarityMetric::Cosine,
         })
     }
 
@@ -132,34 +132,36 @@ impl EmbeddingsDatabase {
         &self,
         chunks_with_embeddings: Vec<ChunkWithEmbedding>
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = Connection::open(&self.db_path)?;
+        let mut conn = Connection::open(&self.db_path)?;
         let tx = conn.transaction()?;
 
-        let mut stmt = tx.prepare(
-            "INSERT INTO embeddings (text, filename, section, sub_section, metadata, embedding)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
-        )?;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT INTO embeddings (text, filename, section, sub_section, metadata, embedding)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
+            )?;
 
-        let mut vss_stmt = tx.prepare(
-            "INSERT INTO vss_embeddings (rowid, embedding) VALUES (?1, ?2)"
-        )?;
+            let mut vss_stmt = tx.prepare(
+                "INSERT INTO vss_embeddings (rowid, embedding) VALUES (?1, ?2)"
+            )?;
 
-        for cwe in chunks_with_embeddings {
-            let metadata_json = serde_json::to_string(&cwe.chunk.metadata)?;
-            let embedding_blob = Self::vec_to_blob(&cwe.embedding);
+            for cwe in chunks_with_embeddings {
+                let metadata_json = serde_json::to_string(&cwe.chunk.metadata)?;
+                let embedding_blob = Self::vec_to_blob(&cwe.embedding);
 
-            stmt.execute(params![
-                cwe.chunk.text,
-                cwe.chunk.source.filename,
-                cwe.chunk.source.section,
-                cwe.chunk.source.sub_section,
-                metadata_json,
-                embedding_blob
-            ])?;
+                stmt.execute(params![
+                    cwe.chunk.text,
+                    cwe.chunk.source.filename,
+                    cwe.chunk.source.section,
+                    cwe.chunk.source.sub_section,
+                    metadata_json,
+                    embedding_blob
+                ])?;
 
-            let rowid = tx.last_insert_rowid();
-            vss_stmt.execute(params![rowid, embedding_blob])?;
-        }
+                let rowid = tx.last_insert_rowid();
+                vss_stmt.execute(params![rowid, embedding_blob])?;
+            }
+        } // Statements are dropped here when this scope ends
 
         tx.commit()?;
         Ok(())
@@ -242,7 +244,8 @@ pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error
     let db = create_embeddings_db(&db_dir)?;
     
     // Step 1: Chunk markdown files
-    let chunks = crate::services::chunking::chunk_markdown_dir(&markdown_dir)?;
+    let markdown_dir_str = markdown_dir.to_str().ok_or("Invalid UTF-8 in path")?;
+    let chunks = crate::services::chunking::chunk_markdown_dir(markdown_dir_str)?;
     println!("Created {} chunks from markdown files", chunks.len());
     
     // Step 2: Anonymize the chunks
@@ -250,7 +253,7 @@ pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error
     println!("Anonymized {} chunks", anonymized_chunks.len());
     
     // Step 3: Embed the chunks
-    let chunks_with_embeddings = crate::services::embeddings::embed_chunks(anonymized_chunks)?;
+    let chunks_with_embeddings = crate::services::embeddings_db::embed_chunks(anonymized_chunks)?;
     println!("Embedded {} chunks", chunks_with_embeddings.len());
     
     // Step 4: Update the database
