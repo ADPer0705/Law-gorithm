@@ -16,7 +16,7 @@
 ✅ **Backend**: Rust services compiled and working  
 ✅ **OCR**: Bundled Tesseract integration functional  
 ✅ **Database**: SQLite with vector search ready  
-✅ **RAG**: Python processing module implemented  
+✅ **RAG**: Python file_mgmt module implemented  
 ✅ **Frontend**: Web interface served and accessible  
 ⚠️ **Desktop App**: LibSoup conflict resolved, builds successfully
 
@@ -24,9 +24,9 @@
 
 This project is organized for collaborative development:
 
-### **Backend Team (RAG & Document Processing)**
+### **Backend Team (RAG & Document file_mgmt)**
 - **RAG System**: `python_modules/rag_processor.py` - Vector embeddings and similarity search
-- **Document Processing**: `src-tauri/src/processors/` - PDF, OCR, and chunking services  
+- **Document file_mgmt**: `src-tauri/src/processors/` - PDF, OCR, and chunking services  
 - **OCR Integration**: `src-tauri/src/services/ocr.rs` - Tesseract OCR with bundled binaries
 - **Database**: `src-tauri/src/storage/` - SQLite with vector search capabilities
 - **Anonymization**: `src-tauri/src/services/anonymization.rs` - PII protection services
@@ -97,7 +97,7 @@ npm run tauri build  # Production build
 
 ```
 law-gorithm/
-├── 🔧 **Backend (RAG & Processing)**
+├── 🔧 **Backend (RAG & file_mgmt)**
 │   ├── python_modules/           # Python RAG system
 │   │   ├── rag_processor.py      # Main RAG implementation
 │   │   ├── requirements.txt      # Python dependencies
@@ -106,7 +106,7 @@ law-gorithm/
 │   ├── src-tauri/                # Rust backend
 │   │   ├── src/
 │   │   │   ├── services/         # Core services
-│   │   │   │   ├── ocr.rs        # OCR processing
+│   │   │   │   ├── ocr.rs        # OCR file_mgmt
 │   │   │   │   ├── ai.rs         # AI/LLM integration
 │   │   │   │   ├── rag.rs        # RAG coordination
 │   │   │   │   └── anonymization.rs # PII protection
@@ -149,14 +149,14 @@ Legal documents contain the most sensitive information about individuals and org
 - **Privacy Compliance**: GDPR, HIPAA, and other regulatory requirements
 
 **Traditional Solutions Fail Privacy:**
-- Cloud-based processing exposes sensitive data
+- Cloud-based file_mgmt exposes sensitive data
 - PII travels across networks and storage systems
 - Compliance risks with data residency requirements
 - No control over data handling by third parties
 
 **Law-gorithm's Innovation:**
-- **Complete PII Anonymization**: Advanced NER-based pseudonymization before any processing
-- **Local Processing**: Desktop application runs entirely on your device
+- **Complete PII Anonymization**: Advanced NER-based pseudonymization before any file_mgmt
+- **Local file_mgmt**: Desktop application runs entirely on your device
 - **Zero Data Leakage**: No PII ever leaves your user environment
 - **Reversible Anonymization**: Maintain pseudonym dictionary for result interpretation
 
@@ -164,20 +164,20 @@ Legal documents contain the most sensitive information about individuals and org
 
 ## 🚀 **Revolutionary Features**
 
-### 🔒 **Privacy-First Processing Pipeline**
+### 🔒 **Privacy-First file_mgmt Pipeline**
 - **OCR with Anonymization**: Extract text from PDFs and immediately anonymize
 - **NER-Based Pseudonymization**: Replace all named entities with contextual pseudonyms
 - **Local Pseudonym Dictionary**: Maintain entity mappings within your environment
 - **Zero PII Exposure**: No real names, dates, or identifiers ever processed
 
 ### 🧠 **Intelligent Anonymized Analysis**
-- **Entity-Aware Processing**: Understands document structure while maintaining anonymity
+- **Entity-Aware file_mgmt**: Understands document structure while maintaining anonymity
 - **Contextual Pseudonyms**: GOVERNING_BODY_1 instead of "Karnataka Government"
 - **Temporal Anonymization**: Year/month only for dates, pseudonymized key dates
 - **Smart Summarization**: Clear insights without revealing sensitive information
 
 ### **Single-Application Architecture**
-- **Complete Isolation**: All processing within one containerized environment
+- **Complete Isolation**: All file_mgmt within one containerized environment
 - **No Network Dependencies**: Process documents without external API calls for sensitive operations
 - **Portable Privacy**: Run natively while maintaining complete confidentiality
 - **Resource Efficient**: Optimized single-image deployment
@@ -189,7 +189,7 @@ Legal documents contain the most sensitive information about individuals and org
 - **Result De-anonymization**: Translate results back using local pseudonym dictionary
 
 ### 📊 **Compliance & Audit**
-- **Complete Audit Trails**: Track all anonymization and processing steps
+- **Complete Audit Trails**: Track all anonymization and file_mgmt steps
 - **Compliance Ready**: GDPR, HIPAA, SOX compliant by design
 - **Data Residency**: Process documents without geographical data movement
 - **Regulatory Reporting**: Generate compliance reports without sensitive data exposure
@@ -209,7 +209,7 @@ Legal documents contain the most sensitive information about individuals and org
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
 │  │ 1️⃣ INGESTION LAYER                                                     │   │
 │  │    • OCR Engine (Bundled Tesseract)                                   │   │
-│  │    • PDF/Image Processing                                               │   │
+│  │    • PDF/Image file_mgmt                                               │   │
 │  │    • Markdown Conversion                                                │   │
 │  └─────────────────────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
@@ -220,7 +220,7 @@ Legal documents contain the most sensitive information about individuals and org
 │  │    • Local Dictionary Storage                                           │   │
 │  └─────────────────────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │ 3️⃣ RAG PROCESSING LAYER                                                │   │
+│  │ 3️⃣ RAG file_mgmt LAYER                                                │   │
 │  │    • Text Chunking (Anonymized Content)                                │   │
 │  │    • Vector Embeddings (ChromaDB/FAISS)                                │   │
 │  │    • Semantic Indexing                                                  │   │
@@ -228,7 +228,7 @@ Legal documents contain the most sensitive information about individuals and org
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
 │  │ 4️⃣ AI INTERFACE LAYER                                                  │   │
 │  │    • Google Gemini API Integration                                     │   │
-│  │    • Query Processing                                                   │   │
+│  │    • Query file_mgmt                                                   │   │
 │  │    • Response Generation                                                │   │
 │  └─────────────────────────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────────────────────────┐   │
@@ -241,7 +241,7 @@ Legal documents contain the most sensitive information about individuals and org
 
 🔒 PRIVACY GUARANTEES:
 • No PII ever leaves the container
-• All processing done on anonymized content
+• All file_mgmt done on anonymized content
 • Pseudonym dictionary never exposed to external APIs
 • Complete data isolation and control
 ```
@@ -259,7 +259,7 @@ Legal documents contain the most sensitive information about individuals and org
 # For non-technical users:
 - Any computer that can run Docker
 - Internet connection for Google AI API calls (anonymized data only)
-- All document processing happens locally on your device
+- All document file_mgmt happens locally on your device
 ```
 
 ### **⚡ One-Command Desktop Deployment**
@@ -270,7 +270,7 @@ Legal documents contain the most sensitive information about individuals and org
 # Linux: .AppImage or .deb package
 
 echo "🏛️ Law-gorithm deployed as native desktop application"
-echo "🔒 Privacy-first legal document processing is now active"
+echo "🔒 Privacy-first legal document file_mgmt is now active"
 echo "⚡ Optimized for desktop performance"
 ```
 
@@ -296,7 +296,7 @@ docker run -d \
 5. **Ask Questions**: Query your documents using natural language
 6. **Get Private Answers**: Receive insights with complete privacy protection
 
-### **📄 OCR & Document Processing**
+### **📄 OCR & Document file_mgmt**
 
 Law-gorithm automatically processes uploaded documents using advanced OCR technology:
 
@@ -304,17 +304,17 @@ Law-gorithm automatically processes uploaded documents using advanced OCR techno
 - 📄 **PDF Documents**: Full text extraction with OCR fallback
 - 🖼️ **Images**: PNG, JPEG, TIFF with embedded text recognition
 - 📝 **Office Documents**: DOCX, DOC (converted to markdown)
-- 📋 **Plain Text**: TXT, MD files (direct processing)
+- 📋 **Plain Text**: TXT, MD files (direct file_mgmt)
 
 **OCR Features:**
 - 🔍 **Smart Text Detection**: Automatically detects if PDF has embedded text or needs OCR
 - 📝 **Markdown Conversion**: Converts all documents to clean markdown format
 - 🎯 **Layout Preservation**: Maintains document structure and formatting
-- ⚡ **Performance Optimized**: Efficient processing with minimal resource usage
-- 🌐 **Multi-language Support**: Configurable language detection and processing
+- ⚡ **Performance Optimized**: Efficient file_mgmt with minimal resource usage
+- 🌐 **Multi-language Support**: Configurable language detection and file_mgmt
 
-**Automatic Processing:**
-- Upload any supported document → Automatic OCR processing → Markdown output
+**Automatic file_mgmt:**
+- Upload any supported document → Automatic OCR file_mgmt → Markdown output
 - No manual intervention required
 - Results stored securely in your local document directory
 
@@ -388,7 +388,7 @@ npm run tauri dev
 # Configure Google AI API key in settings
 
 echo "🏛️ Law-gorithm deployed as native desktop application"
-echo "🔒 Privacy-first legal document processing is now active"
+echo "🔒 Privacy-first legal document file_mgmt is now active"
 echo "⚡ Optimized for desktop performance"
 ```
 
@@ -448,9 +448,9 @@ npm run tauri dev
 
 - **Zero-Storage Policy**: Documents processed and immediately discarded
 - **End-to-End Encryption**: All communications secured with TLS 1.3
-- **Anonymized Processing**: Personal information stripped before AI analysis
+- **Anonymized file_mgmt**: Personal information stripped before AI analysis
 - **Compliance Ready**: GDPR, CCPA, and SOC 2 compliant architecture
-- **Open Source**: Transparent algorithms and processing methods
+- **Open Source**: Transparent algorithms and file_mgmt methods
 
 ---
 

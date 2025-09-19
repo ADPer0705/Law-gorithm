@@ -1,9 +1,0 @@
-[storage]
-# Main storage path - will be resolved to OS-specific directory
-storage_path = "documents"
-
-# Organization
-create_date_folders = true
-
-# Preprocessing (OCR is always enabled)
-temp_dir = "temp"
