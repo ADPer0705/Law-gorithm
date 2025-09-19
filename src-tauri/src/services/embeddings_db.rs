@@ -262,3 +262,28 @@ pub fn populate_database_from_markdown() -> Result<(), Box<dyn std::error::Error
 
 
 // Retrieval of relevant chunks based on user query
+/// Search for chunks similar to the given query text.
+/// 
+/// # Arguments
+/// 
+/// * `query` - The user's query text to search for
+/// * `limit` - Maximum number of results to return
+/// 
+/// # Returns
+/// 
+/// A vector of `SearchResult` containing the most similar chunks to the query
+pub fn search_query(query: &str, limit: usize) -> Result<Vec<SearchResult>, Box<dyn std::error::Error>> {
+    // Get the database directory
+    let db_dir = crate::utils::dirs::get_database_dir()?;
+    
+    // Open the database
+    let db = EmbeddingsDatabase::new(&db_dir)?;
+    
+    // Embed the query
+    let query_embedding = crate::utils::embeddings::embed_text(query)?;
+    
+    // Search for similar chunks
+    let results = db.search_similar(&query_embedding, limit)?;
+    
+    Ok(results)
+}

@@ -393,6 +393,34 @@ impl AnonymizationWorkflow {
         Ok(anonymized)
     }
 
+    /// De-anonymize a single text: replace pseudonyms back with original values from the DB
+    pub fn deanonymize_text(&self, text: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let conn = rusqlite::Connection::open(&self.pseudonym_generator.database.db_path)?;
+
+        // Fetch all pseudonyms and their originals
+        let mut stmt = conn.prepare("SELECT pseudonym, original FROM pseudonyms")?;
+        let mappings_iter = stmt.query_map([], |row| {
+            let pseudonym: String = row.get(0)?;
+            let original: String = row.get(1)?;
+            Ok((pseudonym, original))
+        })?;
+
+        let mut deanonymized = text.to_string();
+
+        // Replace pseudonyms in reverse order of length to avoid substring collisions
+        let mut mappings: Vec<(String, String)> = Vec::new();
+        for mapping in mappings_iter {
+            mappings.push(mapping?);
+        }
+        mappings.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+        for (pseudonym, original) in mappings {
+            deanonymized = deanonymized.replace(&pseudonym, &original);
+        }
+
+        Ok(deanonymized)
+    }
+
     /// Public API: pass in chunks, get anonymized chunks back.
     pub fn anonymize_chunks(&self, chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn std::error::Error>> {
         let mut out = Vec::with_capacity(chunks.len());
@@ -424,4 +452,13 @@ pub fn anonymize_chunks(chunks: Vec<Chunk>) -> Result<Vec<Chunk>, Box<dyn std::e
         .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.");
     let workflow = workflow_mutex.lock().unwrap();
     workflow.anonymize_chunks(chunks)
+}
+
+/// Public function: de-anonymize a single string response
+pub fn deanonymize_response(text: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let workflow_mutex = WORKFLOW
+        .get()
+        .expect("AnonymizationWorkflow not initialized. Call init_anonymization first.");
+    let workflow = workflow_mutex.lock().unwrap();
+    workflow.deanonymize_text(text)
 }
